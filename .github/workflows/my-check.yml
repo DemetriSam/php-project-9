@@ -14,13 +14,3 @@ jobs:
           php-version: '8.1'
       - run: make install
       - run: make lint
-      - name: Run test & publish code coverage
-        uses: paambaati/codeclimate-action@v2.6.0
-        # Add Code Climate secret key
-        env:
-          CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
-          XDEBUG_MODE: coverage
-        with:
-          coverageCommand: make test-coverage
-          coverageLocations: ${{github.workplace}}/build/logs/clover.xml:clover
-          debug: true
