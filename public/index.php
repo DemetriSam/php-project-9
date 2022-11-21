@@ -13,7 +13,8 @@ $app = AppFactory::create();
 $twig = Twig::create('../views');
 $app->add(TwigMiddleware::create($app, $twig));
 
-if(isset($_ENV['DATABASE_URL'])) {
+if (isset($_ENV['DATABASE_URL'])) {
+    print_r($_ENV['DATABASE_URL']);
     $databaseUrl = parse_url($_ENV['DATABASE_URL']);
     $username = $databaseUrl['user'];
     $password = $databaseUrl['pass'];
@@ -41,7 +42,6 @@ $app->get('/urls', function (Request $request, Response $response, array $args) 
 })->setName('urls');
 
 $app->post('/urls', function (Request $request, Response $response, array $args) {
-    
 })->setName('urls.store');
 
 $app->run();
