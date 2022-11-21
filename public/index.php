@@ -80,14 +80,15 @@ $app->post('/urls', function (Request $request, Response $response, array $args)
     $pdo = connect(...$dbconfig);
 
     $checkExistence = "SELECT * FROM urls WHERE name='$name'";
-    $id = $pdo->query($checkExistence)->fetch()['id'];
+    $row = $pdo->query($checkExistence)->fetch();
     
-    if(!$id) {
+    if(!$row) {
         $query = "INSERT INTO urls (name, created_at) VALUES ('$name', '$now')";
         $pdo->query($query);
         $id = $pdo->lastInsertId();
         $message = 'Страница успешно добавлена';
     } else {
+        $id = $row['id'];
         $message = 'Страница уже существует';
     }
     $routeParser = $app->getRouteCollector()->getRouteParser();
