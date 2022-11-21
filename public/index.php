@@ -14,8 +14,8 @@ $twig = Twig::create('../views');
 $app->add(TwigMiddleware::create($app, $twig));
 
 if (isset($_ENV['DATABASE_URL'])) {
-    print_r($_ENV['DATABASE_URL']);
     $databaseUrl = parse_url($_ENV['DATABASE_URL']);
+    print_r($_ENV['databaseUrl']);
     $username = $databaseUrl['user'];
     $password = $databaseUrl['pass'];
     $host = $databaseUrl['host'];
