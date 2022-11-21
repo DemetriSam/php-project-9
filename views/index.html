@@ -39,6 +39,18 @@
             </div>
         </nav>
     </header>
+    
+    {% for message in messages.success %}
+        <div class="alert alert-success" role="alert">
+            {{ message }}
+        </div>
+    {% endfor %}
+    
+    {% for message in messages.error %}
+        <div class="alert alert-danger" role="alert">
+            {{ message }}
+        </div>
+    {% endfor %}
 
     <main class="flex-grow-1">
         <div class="container-lg mt-3">

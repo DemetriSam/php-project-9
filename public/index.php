@@ -1,17 +1,33 @@
 <?php
 
+use DI\Container;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
 use Slim\Views\Twig;
 use Slim\Views\TwigMiddleware;
+use Carbon\Carbon;
+use Valitron\Validator;
+use Slim\Routing\RouteParser;
 
 require __DIR__ . '/../vendor/autoload.php';
 
+session_start();
+
+$container = new Container();
+AppFactory::setContainer($container);
+
+$container->set('view', function() {
+    return Twig::create('../views');
+});
+
+$container->set('flash', function () {
+    return new \Slim\Flash\Messages();
+});
+
 $app = AppFactory::create();
 
-$twig = Twig::create('../views');
-$app->add(TwigMiddleware::create($app, $twig));
+$app->add(TwigMiddleware::createFromContainer($app));
 
 if (isset($_ENV['DATABASE_URL'])) {
     $databaseUrl = parse_url($_ENV['DATABASE_URL']);
@@ -21,26 +37,62 @@ if (isset($_ENV['DATABASE_URL'])) {
     $port = $databaseUrl['port'];
     $dbname = ltrim($databaseUrl['path'], '/');
 } else {
-    $username = 'php-project-9';
-    $password = 'password';
+    $username = 'postgres';
+    $password = 'postgres';
     $host = 'localhost';
     $port = '5433';
     $dbname = 'php-project-9';
 }
 
-$pdo = connect($host, $port, $dbname, $username, $password);
+$dbconfig = [$host, $port, $dbname, $username, $password];
 
 $app->get('/', function (Request $request, Response $response, array $args) {
-    $view = Twig::fromRequest($request);
-    return $view->render($response, 'index.html');
+    return $this->get('view')->render($response, 'index.html');
 })->setName('index');
 
-$app->get('/urls', function (Request $request, Response $response, array $args) {
-    $view = Twig::fromRequest($request);
-    return $view->render($response, 'urls.html');
+$app->get('/urls', function (Request $request, Response $response, array $args) use ($dbconfig) {
+    $pdo = connect(...$dbconfig);
+    $query = "SELECT * FROM urls";
+    $rows = $pdo->query($query)->fetchAll(PDO::FETCH_ASSOC);
+    return $this->get('view')->render($response, 'urls.html', compact('rows'));
 })->setName('urls');
 
-$app->post('/urls', function (Request $request, Response $response, array $args) {
+$app->get('/urls/{id}', function (Request $request, Response $response, array $args) use ($dbconfig) {
+    $id = $args['id'];
+    $messages = $this->get('flash')->getMessages();
+    $pdo = connect(...$dbconfig);
+    $query = "SELECT * FROM urls WHERE id=$id";
+    $row = $pdo->query($query)->fetch(PDO::FETCH_ASSOC);
+    return $this->get('view')->render($response, 'show.url.html', compact('row', 'messages'));
+})->setName('urls.show');;
+
+$app->post('/urls', function (Request $request, Response $response, array $args) use ($dbconfig, $app) {
+    $name = $_POST['url']['name'];
+    $now = Carbon::now()->toDateTimeString();
+    $v = new Validator($_POST);
+    $v->rule('required', 'url.name');
+    $v->rule('lengthMax', 'url.name', 255);
+    if(!$v->validate()) {
+        // Errors
+        print_r($v->errors());
+    }
+    
+    $pdo = connect(...$dbconfig);
+
+    $checkExistence = "SELECT * FROM urls WHERE name='$name'";
+    $id = $pdo->query($checkExistence)->fetch()['id'];
+    
+    if(!$id) {
+        $query = "INSERT INTO urls (name, created_at) VALUES ('$name', '$now')";
+        $pdo->query($query);
+        $id = $pdo->lastInsertId();
+        $message = 'Страница успешно добавлена';
+    } else {
+        $message = 'Страница уже существует';
+    }
+    $routeParser = $app->getRouteCollector()->getRouteParser();
+    $this->get('flash')->addMessage('success', $message);
+    return $response->withHeader('Location', $routeParser->urlFor('urls.show', ['id' => $id]))->withStatus(302);
 })->setName('urls.store');
 
 $app->run();

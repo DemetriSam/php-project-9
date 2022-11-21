@@ -1,5 +1,29 @@
 {% extends "index.html" %}
 
 {% block main %}
-    <h1>Сайты</h1>
+<h1>Сайты</h1>
+<div class="table-responsive">
+    <table class="table table-bordered table-hover text-nowrap" data-test="urls">
+        <tbody>
+            <tr>
+                <th>ID</th>
+                <th>Имя</th>
+                <th>Последняя проверка</th>
+                <th>Код ответа</th>
+            </tr>
+            {% for row in rows %}
+            <tr>
+                <td>{{ row.id }}</td>
+                <td>
+                    <a href="/urls/{{ row.id }}">
+                        {{ row.name }}
+                    </a>
+                </td>
+                <td></td>
+                <td></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock main %}
