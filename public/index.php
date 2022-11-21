@@ -15,12 +15,11 @@ $app->add(TwigMiddleware::create($app, $twig));
 
 if (isset($_ENV['DATABASE_URL'])) {
     $databaseUrl = parse_url($_ENV['DATABASE_URL']);
-    print_r($databaseUrl);
     $username = $databaseUrl['user'];
     $password = $databaseUrl['pass'];
     $host = $databaseUrl['host'];
     $port = $databaseUrl['port'];
-    $dbName = ltrim($databaseUrl['path'], '/');
+    $dbname = ltrim($databaseUrl['path'], '/');
 } else {
     $username = 'php-project-9';
     $password = 'password';
