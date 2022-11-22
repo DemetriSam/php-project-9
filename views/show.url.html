@@ -1,27 +1,27 @@
 {% extends "index.html" %}
 
 {% block main %}
-<h1>Сайт: {{ row.name }}</h1>
+<h1>Сайт: {{ urlInfo.name }}</h1>
 <div class="table-responsive">
     <table class="table table-bordered table-hover text-nowrap" data-test="url">
         <tbody>
             <tr>
                 <td>ID</td>
-                <td>{{ row.id }}</td>
+                <td>{{ urlInfo.id }}</td>
             </tr>
             <tr>
                 <td>Имя</td>
-                <td>{{ row.name }}</td>
+                <td>{{ urlInfo.name }}</td>
             </tr>
             <tr>
                 <td>Дата создания</td>
-                <td>{{ row.created_at }}</td>
+                <td>{{ urlInfo.created_at }}</td>
             </tr>
         </tbody>
     </table>
 </div>
 <h2 class="mt-5 mb-3">Проверки</h2>
-<form method="post" action="/urls/1/checks">
+<form method="post" action="/urls/{{ urlInfo.id }}/checks">
     <input type="submit" class="btn btn-primary" value="Запустить проверку">
 </form>
 <table class="table table-bordered table-hover" data-test="checks">
@@ -35,15 +35,17 @@
             <th>Дата создания</th>
         </tr>
         <!--?php foreach ($checks as $check): ?-->
+        {% for check in checks %}
         <tr>
-            <td>3</td>
-            <td>200</td>
-            <td class="text-break">&nbsp;</td>
-            <td class="text-break">VK:n mobiiliversio | VK</td>
-            <td class="text-break">VK on tehokas työkalu löytämään vanhoja ja uusia kavereita. Haluamme että ystävät,
-                koulukaverit, työkaverit, naapurit jne. ovat aina yhteydessä toisiinsa.</td>
-            <td>2022-11-21 13:44:55</td>
-        </tr>
+            <td>{{ check.id }}</td>
+            <td>{{ check.status_code }}</td>
+            <td class="text-break">{{ check.h1 }}</td>
+            <td class="text-break">{{ check.title }}</td>
+            <td class="text-break">{{ check.description }}</td>
+            <td>{{ check.created_at }}</td>
+        </tr>            
+        {% endfor %}
+
     </tbody>
 </table>
 {% endblock main %}

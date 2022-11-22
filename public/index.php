@@ -17,7 +17,7 @@ session_start();
 $container = new Container();
 AppFactory::setContainer($container);
 
-$container->set('view', function() {
+$container->set('view', function () {
     return Twig::create('../views');
 });
 
@@ -52,7 +52,12 @@ $app->get('/', function (Request $request, Response $response, array $args) {
 
 $app->get('/urls', function (Request $request, Response $response, array $args) use ($dbconfig) {
     $pdo = connect(...$dbconfig);
-    $query = "SELECT * FROM urls";
+    $query = "SELECT urls.id, urls.name, MAX(url_checks.created_at) as last_check
+        FROM urls 
+        LEFT JOIN url_checks
+        ON urls.id = url_checks.url_id
+        GROUP BY urls.id
+        ORDER BY urls.created_at DESC";
     $rows = $pdo->query($query)->fetchAll(PDO::FETCH_ASSOC);
     return $this->get('view')->render($response, 'urls.html', compact('rows'));
 })->setName('urls');
@@ -60,11 +65,18 @@ $app->get('/urls', function (Request $request, Response $response, array $args) 
 $app->get('/urls/{id}', function (Request $request, Response $response, array $args) use ($dbconfig) {
     $id = $args['id'];
     $messages = $this->get('flash')->getMessages();
+
     $pdo = connect(...$dbconfig);
-    $query = "SELECT * FROM urls WHERE id=$id";
-    $row = $pdo->query($query)->fetch(PDO::FETCH_ASSOC);
-    return $this->get('view')->render($response, 'show.url.html', compact('row', 'messages'));
-})->setName('urls.show');;
+
+    $getUrlInfo = "SELECT * FROM urls WHERE id=$id";
+    $urlInfo = $pdo->query($getUrlInfo)->fetch(PDO::FETCH_ASSOC);
+
+    $getChecks = "SELECT * FROM url_checks WHERE url_id=$id";
+    $checks = $pdo->query($getChecks)->fetchAll(PDO::FETCH_ASSOC);
+
+    return $this->get('view')->render($response, 'show.url.html', compact('urlInfo', 'checks', 'messages'));
+})->setName('urls.show');
+;
 
 $app->post('/urls', function (Request $request, Response $response, array $args) use ($dbconfig, $app) {
     $name = $_POST['url']['name'];
@@ -72,7 +84,7 @@ $app->post('/urls', function (Request $request, Response $response, array $args)
     $validator = new Validator($_POST);
     $validator->rule('required', 'url.name');
     $validator->rule('url', 'url.name');
-    if(!$validator->validate()) {
+    if (!$validator->validate()) {
         $customMessages = [
             'Url.name is required' => 'URL не должен быть пустым',
             'Url.name is not a valid URL' => 'Некорректный URL',
@@ -82,16 +94,16 @@ $app->post('/urls', function (Request $request, Response $response, array $args)
             'error' => $customMessages[$validator->errors()['url.name'][0]],
             'oldValue' => $name,
         ];
-        
+
         return $this->get('view')->render($response, 'index.html', $params);
     }
-    
+
     $pdo = connect(...$dbconfig);
 
     $checkExistence = "SELECT * FROM urls WHERE name='$name'";
     $row = $pdo->query($checkExistence)->fetch();
-    
-    if(!$row) {
+
+    if (!$row) {
         $query = "INSERT INTO urls (name, created_at) VALUES ('$name', '$now')";
         $pdo->query($query);
         $id = $pdo->lastInsertId();
@@ -104,5 +116,17 @@ $app->post('/urls', function (Request $request, Response $response, array $args)
     $this->get('flash')->addMessage('success', $message);
     return $response->withHeader('Location', $routeParser->urlFor('urls.show', ['id' => $id]))->withStatus(302);
 })->setName('urls.store');
+
+$app->post('/urls/{url_id}/checks', function (Request $request, Response $response, array $args) use ($dbconfig, $app) {
+    $urlId = $args['url_id'];
+    $now = Carbon::now()->toDateTimeString();
+    $query = "INSERT INTO url_checks (url_id, created_at) VALUES ('$urlId', '$now')";
+    $pdo = connect(...$dbconfig);
+    $pdo->query($query);
+
+    $routeParser = $app->getRouteCollector()->getRouteParser();
+    $this->get('flash')->addMessage('success', 'Страница успешно проверена');
+    return $response->withHeader('Location', $routeParser->urlFor('urls.show', ['id' => $urlId]))->withStatus(302);
+});
 
 $app->run();
