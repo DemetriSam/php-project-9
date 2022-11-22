@@ -69,12 +69,21 @@ $app->get('/urls/{id}', function (Request $request, Response $response, array $a
 $app->post('/urls', function (Request $request, Response $response, array $args) use ($dbconfig, $app) {
     $name = $_POST['url']['name'];
     $now = Carbon::now()->toDateTimeString();
-    $v = new Validator($_POST);
-    $v->rule('required', 'url.name');
-    $v->rule('lengthMax', 'url.name', 255);
-    if(!$v->validate()) {
-        // Errors
-        print_r($v->errors());
+    $validator = new Validator($_POST);
+    $validator->rule('required', 'url.name');
+    $validator->rule('url', 'url.name');
+    if(!$validator->validate()) {
+        $customMessages = [
+            'Url.name is required' => 'URL не должен быть пустым',
+            'Url.name is not a valid URL' => 'Некорректный URL',
+        ];
+
+        $params = [
+            'error' => $customMessages[$validator->errors()['url.name'][0]],
+            'oldValue' => $name,
+        ];
+        
+        return $this->get('view')->render($response, 'index.html', $params);
     }
     
     $pdo = connect(...$dbconfig);
