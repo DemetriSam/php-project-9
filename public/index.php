@@ -96,8 +96,11 @@ $app->post('/urls', function (Request $request, Response $response, array $args)
             'Url.name is not a valid URL' => 'Некорректный URL',
         ];
 
+        $errors = $validator->errors();
+        $messages = $errors ? $errors['url.name'] : [];
+
         $params = [
-            'error' => $customMessages[$validator->errors()['url.name'][0]],
+            'error' => $customMessages[$messages[0]],
             'oldValue' => $name,
         ];
 
@@ -131,7 +134,6 @@ $app->post('/urls/{url_id}/checks', function (Request $request, Response $respon
 
     $query = "SELECT name FROM urls WHERE id=$urlId";
     $result = optional($pdo->query($query))->fetch();
-    /** @phpstan-ignore-next-line */
     $url = $result ? $result['name'] : null;
 
     $client = new GuzzleHttp\Client();
