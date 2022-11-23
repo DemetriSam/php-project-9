@@ -101,7 +101,7 @@ $app->post('/urls', function (Request $request, Response $response, array $args)
             'oldValue' => $name,
         ];
 
-        return $this->get('view')->render($response, 'index.html', $params);
+        return $this->get('view')->render($response, 'index.html', $params)->withStatus(422);
     }
 
     $pdo = connect(...$dbconfig);
