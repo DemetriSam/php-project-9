@@ -75,7 +75,7 @@ $app->get('/urls/{id}', function (Request $request, Response $response, array $a
     $pdo = connect(...$dbconfig);
 
     $getUrlInfo = "SELECT * FROM urls WHERE id=$id";
-    $urlInfo = $pdo->query($getUrlInfo)->fetch(PDO::FETCH_ASSOC);
+    $urlInfo = optional($pdo->query($getUrlInfo))->fetch(PDO::FETCH_ASSOC);
 
     $getChecks = "SELECT * FROM url_checks WHERE url_id=$id ORDER BY created_at DESC";
     $checks = $pdo->query($getChecks)->fetchAll(PDO::FETCH_ASSOC);
@@ -107,7 +107,7 @@ $app->post('/urls', function (Request $request, Response $response, array $args)
     $pdo = connect(...$dbconfig);
 
     $checkExistence = "SELECT * FROM urls WHERE name='$name'";
-    $row = $pdo->query($checkExistence)->fetch();
+    $row = optional($pdo->query($checkExistence))->fetch();
 
     if (!$row) {
         $query = "INSERT INTO urls (name, created_at) VALUES ('$name', '$now')";
@@ -130,7 +130,8 @@ $app->post('/urls/{url_id}/checks', function (Request $request, Response $respon
     $routeParser = $app->getRouteCollector()->getRouteParser();
 
     $query = "SELECT name FROM urls WHERE id=$urlId";
-    $url = $pdo->query($query)->fetch()['name'];
+    $result = optional($pdo->query($query))->fetch();
+    $url = $result ? $result['name'] : null;
 
     $client = new GuzzleHttp\Client();
 

@@ -1,6 +1,6 @@
 <?php
 
-function connect(string $host, string $port, string $dbname, string $user, string $password): PDO
+function connect(string $host, int|string $port, string $dbname, string $user, string $password): PDO
 {
     try {
         $dsn = "pgsql:host=$host;port=$port;dbname=$dbname;";
