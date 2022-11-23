@@ -10,7 +10,8 @@
         "vlucas/valitron": "^1.4",
         "nesbot/carbon": "^2.63",
         "slim/flash": "^0.4.0",
-        "php-di/php-di": "^6.4"
+        "php-di/php-di": "^6.4",
+        "guzzlehttp/guzzle": "^7.0"
     },
     "require-dev": {
         "squizlabs/php_codesniffer": "^3.7",
