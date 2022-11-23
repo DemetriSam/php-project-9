@@ -148,7 +148,7 @@ $app->post('/urls/{url_id}/checks', function (Request $request, Response $respon
     $titleTag = $document->first('title');
     $metaDescription = $document->first('meta[name=description]');
 
-    $description = explode('"', explode('content="', $metaDescription->html())[1])[0];
+    $description = explode('"', explode('content="', optional($metaDescription)->html())[1])[0];
     $h1 = optional($h1Tag)->text();
     $title = optional($titleTag)->text();
 
