@@ -3,4 +3,4 @@
 
 # Project 3 on Hexlet
 
-Actual application is https://php-project-9-production-9db9.up.railway.app/
+Actual application is https://php-project-9-production-b400.up.railway.app/
