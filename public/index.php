@@ -131,6 +131,7 @@ $app->post('/urls/{url_id}/checks', function (Request $request, Response $respon
 
     $query = "SELECT name FROM urls WHERE id=$urlId";
     $result = optional($pdo->query($query))->fetch();
+    /** @phpstan-ignore-next-line */
     $url = $result ? $result['name'] : null;
 
     $client = new GuzzleHttp\Client();
