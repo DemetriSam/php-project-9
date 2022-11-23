@@ -52,7 +52,7 @@ $app->get('/', function (Request $request, Response $response, array $args) {
 
 $app->get('/urls', function (Request $request, Response $response, array $args) use ($dbconfig) {
     $pdo = connect(...$dbconfig);
-    $query = 
+    $query =
         "SELECT nested.id, nested.name, url_checks.status_code, nested.last_check, nested.created_at
         FROM (	
             SELECT urls.id, urls.name, urls.created_at, MAX(url_checks.created_at) as last_check
