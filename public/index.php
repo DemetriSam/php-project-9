@@ -97,6 +97,7 @@ $app->post('/urls', function (Request $request, Response $response, array $args)
         ];
 
         $errors = $validator->errors();
+        /** @phpstan-ignore-next-line */
         $messages = $errors ? $errors['url.name'] : [];
 
         $params = [
