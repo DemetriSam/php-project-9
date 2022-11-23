@@ -143,8 +143,18 @@ $app->post('/urls/{url_id}/checks', function (Request $request, Response $respon
 
     $statusCode = $res->getStatusCode();
 
-    $query = "INSERT INTO url_checks (url_id, created_at, status_code) VALUES ('$urlId', '$now', $statusCode)";
-    $pdo->query($query);
+    $document = new \DiDom\Document($url, true);
+    $h1Tag = $document->first('h1');
+    $titleTag = $document->first('title');
+    $metaDescription = $document->first('meta[name=description]');
+
+    $description = explode('"', explode('content="', $metaDescription->html())[1])[0];
+    $h1 = optional($h1Tag)->text();
+    $title = optional($titleTag)->text();
+
+    $query1 = "INSERT INTO url_checks (url_id, created_at, status_code, h1, title, description) ";
+    $query2 = "VALUES ('$urlId', '$now', $statusCode, '$h1', '$title', '$description')";
+    $pdo->query($query1 . $query2);
 
     $this->get('flash')->addMessage('success', 'Страница успешно проверена');
     return $response->withHeader('Location', $routeParser->urlFor('urls.show', ['id' => $urlId]))->withStatus(302);
