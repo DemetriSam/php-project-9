@@ -9,6 +9,7 @@ use Slim\Views\TwigMiddleware;
 use Carbon\Carbon;
 use Valitron\Validator;
 use Slim\Routing\RouteParser;
+use Illuminate\Support\Arr;
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -29,13 +30,13 @@ $app = AppFactory::create();
 
 $app->add(TwigMiddleware::createFromContainer($app));
 
-if (isset($_ENV['DATABASE_URL'])) {
-    $databaseUrl = parse_url($_ENV['DATABASE_URL']);
-    $username = $databaseUrl['user'];
-    $password = $databaseUrl['pass'];
-    $host = $databaseUrl['host'];
-    $port = $databaseUrl['port'];
-    $dbname = ltrim($databaseUrl['path'], '/');
+if (Arr::has($_ENV, 'DATABASE_URL')) {
+    $databaseUrl = parse_url(Arr::get($_ENV, 'DATABASE_URL'));
+    $username = Arr::get($databaseUrl, 'user');
+    $password = Arr::get($databaseUrl, 'pass');
+    $host = Arr::get($databaseUrl, 'host');
+    $port = Arr::get($databaseUrl, 'port');
+    $dbname = Str::of(Arr::get($databaseUrl, 'path'))->ltrim('/');
 } else {
     $username = 'postgres';
     $password = 'postgres';
