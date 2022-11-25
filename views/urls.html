@@ -15,7 +15,7 @@
             <tr>
                 <td>{{ row.id }}</td>
                 <td>
-                    <a href="/urls/{{ row.id }}">
+                    <a href="{{ url_for('urls.show', {'id' : row.id}) }}">
                         {{ row.name }}
                     </a>
                 </td>

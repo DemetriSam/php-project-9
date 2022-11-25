@@ -27,33 +27,36 @@ $container->set('flash', function () {
     return new \Slim\Flash\Messages();
 });
 
+$container->set('flash', function () {
+    return new \Slim\Flash\Messages();
+});
+
+$container->set('db', function () {
+    $databaseUrl = parse_url(getenv('DATABASE_URL'));
+
+    $username = Arr::get($databaseUrl, 'user', 'postgres');
+    $password = Arr::get($databaseUrl, 'pass', 'postgres');
+    $host = Arr::get($databaseUrl, 'host', 'localhost');
+    $port = Arr::get($databaseUrl, 'port', '5433');
+
+    $path = Str::of(Arr::get($databaseUrl, 'path'))->ltrim('/');
+    $dbname = $path->isEmpty() ? 'php-project-9' : $path;
+
+    return connect($host, $port, $dbname, $username, $password);
+});
+
+
 $app = AppFactory::create();
 
 $app->add(TwigMiddleware::createFromContainer($app));
-
-if (Arr::has($_ENV, 'DATABASE_URL')) {
-    $databaseUrl = parse_url(Arr::get($_ENV, 'DATABASE_URL'));
-    $username = Arr::get($databaseUrl, 'user');
-    $password = Arr::get($databaseUrl, 'pass');
-    $host = Arr::get($databaseUrl, 'host');
-    $port = Arr::get($databaseUrl, 'port');
-    $dbname = Str::of(Arr::get($databaseUrl, 'path'))->ltrim('/');
-} else {
-    $username = 'postgres';
-    $password = 'postgres';
-    $host = 'localhost';
-    $port = '5433';
-    $dbname = 'php-project-9';
-}
-
-$dbconfig = [$host, $port, $dbname, $username, $password];
 
 $app->get('/', function (Request $request, Response $response, array $args) {
     return $this->get('view')->render($response, 'index.html');
 })->setName('index');
 
-$app->get('/urls', function (Request $request, Response $response, array $args) use ($dbconfig) {
-    $pdo = connect(...$dbconfig);
+$app->get('/urls', function (Request $request, Response $response, array $args) {
+    
+    $pdo = $this->get('db');
     $query =
         "SELECT nested.id, nested.name, url_checks.status_code, nested.last_check, nested.created_at
         FROM (	
@@ -70,11 +73,11 @@ $app->get('/urls', function (Request $request, Response $response, array $args) 
     return $this->get('view')->render($response, 'urls.html', compact('rows'));
 })->setName('urls');
 
-$app->get('/urls/{id}', function (Request $request, Response $response, array $args) use ($dbconfig) {
+$app->get('/urls/{id}', function (Request $request, Response $response, array $args) {
     $id = $args['id'];
     $messages = $this->get('flash')->getMessages();
 
-    $pdo = connect(...$dbconfig);
+    $pdo = $this->get('db');
 
     $getUrlInfo = "SELECT * FROM urls WHERE id=$id";
     $urlInfo = optional($pdo->query($getUrlInfo))->fetch(PDO::FETCH_ASSOC);
@@ -86,7 +89,7 @@ $app->get('/urls/{id}', function (Request $request, Response $response, array $a
 })->setName('urls.show');
 ;
 
-$app->post('/urls', function (Request $request, Response $response, array $args) use ($dbconfig, $app) {
+$app->post('/urls', function (Request $request, Response $response, array $args) use ($app) {
     $name = $_POST['url']['name'];
     $now = Carbon::now()->toDateTimeString();
     $validator = new Validator($_POST);
@@ -110,7 +113,7 @@ $app->post('/urls', function (Request $request, Response $response, array $args)
         return $this->get('view')->render($response, 'index.html', $params)->withStatus(422);
     }
 
-    $pdo = connect(...$dbconfig);
+    $pdo = $this->get('db');
 
     $checkExistence = "SELECT * FROM urls WHERE name='$name'";
     $row = optional($pdo->query($checkExistence))->fetch();
@@ -129,10 +132,10 @@ $app->post('/urls', function (Request $request, Response $response, array $args)
     return $response->withHeader('Location', $routeParser->urlFor('urls.show', ['id' => $id]))->withStatus(302);
 })->setName('urls.store');
 
-$app->post('/urls/{url_id}/checks', function (Request $request, Response $response, array $args) use ($dbconfig, $app) {
+$app->post('/urls/{url_id}/checks', function (Request $request, Response $response, array $args) use ($app) {
     $urlId = $args['url_id'];
     $now = Carbon::now()->toDateTimeString();
-    $pdo = connect(...$dbconfig);
+    $pdo = $this->get('db');;
     $routeParser = $app->getRouteCollector()->getRouteParser();
 
     $query = "SELECT name FROM urls WHERE id=$urlId";
@@ -155,7 +158,7 @@ $app->post('/urls/{url_id}/checks', function (Request $request, Response $respon
     $titleTag = $document->first('title');
     $metaDescription = $document->first('meta[name=description]');
 
-    $description = explode('"', explode('content="', optional($metaDescription)->html())[1])[0];
+    $description = Str::between($metaDescription, 'content="', '"');
     $h1 = optional($h1Tag)->text();
     $title = optional($titleTag)->text();
 
@@ -165,6 +168,6 @@ $app->post('/urls/{url_id}/checks', function (Request $request, Response $respon
 
     $this->get('flash')->addMessage('success', 'Страница успешно проверена');
     return $response->withHeader('Location', $routeParser->urlFor('urls.show', ['id' => $urlId]))->withStatus(302);
-});
+})->setName('checks.make');
 
 $app->run();
