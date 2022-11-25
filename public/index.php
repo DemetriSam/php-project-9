@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Valitron\Validator;
 use Slim\Routing\RouteParser;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 
 require __DIR__ . '/../vendor/autoload.php';
 
