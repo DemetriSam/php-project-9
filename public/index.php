@@ -11,6 +11,7 @@ use Valitron\Validator;
 use Slim\Routing\RouteParser;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Hexlet\Code\MyCustomErrorRenderer;
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -48,6 +49,11 @@ $container->set('db', function () {
 
 $app = AppFactory::create();
 
+$app->addRoutingMiddleware();
+$errorMiddleware = $app->addErrorMiddleware(true, true, true);
+$errorHandler = $errorMiddleware->getDefaultErrorHandler();
+$errorHandler->registerErrorRenderer('text/html', MyCustomErrorRenderer::class);
+
 $app->add(TwigMiddleware::createFromContainer($app));
 
 $app->get('/', function (Request $request, Response $response, array $args) {
@@ -55,7 +61,7 @@ $app->get('/', function (Request $request, Response $response, array $args) {
 })->setName('index');
 
 $app->get('/urls', function (Request $request, Response $response, array $args) {
-    
+
     $pdo = $this->get('db');
     $query =
         "SELECT nested.id, nested.name, url_checks.status_code, nested.last_check, nested.created_at
@@ -135,7 +141,8 @@ $app->post('/urls', function (Request $request, Response $response, array $args)
 $app->post('/urls/{url_id}/checks', function (Request $request, Response $response, array $args) use ($app) {
     $urlId = $args['url_id'];
     $now = Carbon::now()->toDateTimeString();
-    $pdo = $this->get('db');;
+    $pdo = $this->get('db');
+    ;
     $routeParser = $app->getRouteCollector()->getRouteParser();
 
     $query = "SELECT name FROM urls WHERE id=$urlId";
