@@ -11,17 +11,17 @@
                 <th>Последняя проверка</th>
                 <th>Код ответа</th>
             </tr>
-            {% for row in rows %}
-            <tr>
-                <td>{{ row.id }}</td>
-                <td>
-                    <a href="{{ url_for('urls.show', {'id' : row.id}) }}">
-                        {{ row.name }}
-                    </a>
-                </td>
-                <td>{{ row.last_check }}</td>
-                <td>{{ row.status_code }}</td>
-            </tr>
+            {% for url in urls %}
+                <tr>
+                    <td>{{ url.id }}</td>
+                    <td>
+                        <a href="{{ url_for("urls.show", {'id': url.id}) }}">
+                            {{ url.name }}
+                        </a>
+                    </td>
+                    <td>{{ checks[url.id]['created_at'] }}</td>
+                    <td>{{ checks[url.id]['status_code'] }}</td>
+                </tr>
             {% endfor %}
         </tbody>
     </table>

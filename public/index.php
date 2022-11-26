@@ -28,10 +28,6 @@ $container->set('flash', function () {
     return new \Slim\Flash\Messages();
 });
 
-$container->set('flash', function () {
-    return new \Slim\Flash\Messages();
-});
-
 $container->set('db', function () {
     $databaseUrl = parse_url(Arr::get($_ENV, 'DATABASE_URL', ''));
 
@@ -64,32 +60,17 @@ $app->get('/', function (Request $request, Response $response, array $args) {
 $app->get('/urls', function (Request $request, Response $response, array $args) {
     $pdo = $this->get('db');
 
-    $urls = $pdo->query('SELECT * FROM urls ORDER BY created_at DESC')->fetchAll();
-    $checks = $pdo->query('SELECT * FROM url_checks')->fetchAll();
+    $statement = $pdo->query('SELECT * FROM urls ORDER BY id DESC;');
+    $urls = $statement->fetchAll();
+    $checksStatement = $pdo->query('SELECT DISTINCT ON (url_id) * from url_checks order by url_id DESC, id DESC');
+    $checks = $checksStatement->fetchAll();
 
-    $joined = Arr::map($urls, function ($url) use ($checks) {
+    $params = [
+        'urls' => $urls,
+        'checks' => Arr::keyBy($checks, 'url_id'),
+    ];
 
-        $chunk = Arr::where($checks, function ($check) use ($url) {
-            return $check['url_id'] === $url['id'];
-        });
-
-        $sortedByDate = Arr::sort($chunk, function ($check) {
-            return $check['created_at'];
-        });
-
-        $reversed = array_reverse($sortedByDate);
-
-        $checkWithMaxDate = $reversed[0];
-
-        $forJoin = [
-            'last_check' => $checkWithMaxDate['created_at'],
-            'status_code' => $checkWithMaxDate['status_code'],
-        ];
-
-        return array_merge($url, $forJoin);
-    });
-
-    return $this->get('view')->render($response, 'urls.html', ['rows' => $joined]);
+    return $this->get('view')->render($response, 'urls.html', $params);
 })->setName('urls');
 
 $app->get('/urls/{id}', function (Request $request, Response $response, array $args) {
