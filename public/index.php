@@ -52,6 +52,7 @@ $app = AppFactory::create();
 $app->addRoutingMiddleware();
 $errorMiddleware = $app->addErrorMiddleware(true, true, true);
 $errorHandler = $errorMiddleware->getDefaultErrorHandler();
+/** @phpstan-ignore-next-line */
 $errorHandler->registerErrorRenderer('text/html', MyCustomErrorRenderer::class);
 
 $app->add(TwigMiddleware::createFromContainer($app));
@@ -175,8 +176,8 @@ $app->post('/urls/{url_id}/checks', function (Request $request, Response $respon
     $document = new \DiDom\Document($url, true);
     $h1Tag = $document->first('h1');
     $titleTag = $document->first('title');
-    $metaDescription = (string) $document->first('meta[name=description]');
-
+    $metaDescription = $document->first('meta[name=description]');
+    /** @phpstan-ignore-next-line */
     $description = Str::between($metaDescription, 'content="', '"');
     $h1 = optional($h1Tag)->text();
     $title = optional($titleTag)->text();
