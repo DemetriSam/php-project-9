@@ -33,7 +33,7 @@ $container->set('flash', function () {
 });
 
 $container->set('db', function () {
-    $databaseUrl = parse_url(getenv('DATABASE_URL'));
+    $databaseUrl = parse_url(getenv('DATABASE_URL') ?? '');
 
     $username = Arr::get($databaseUrl, 'user', 'postgres');
     $password = Arr::get($databaseUrl, 'pass', 'postgres');
@@ -61,22 +61,34 @@ $app->get('/', function (Request $request, Response $response, array $args) {
 })->setName('index');
 
 $app->get('/urls', function (Request $request, Response $response, array $args) {
-
     $pdo = $this->get('db');
-    $query =
-        "SELECT nested.id, nested.name, url_checks.status_code, nested.last_check, nested.created_at
-        FROM (	
-            SELECT urls.id, urls.name, urls.created_at, MAX(url_checks.created_at) as last_check
-                    FROM urls 
-                    LEFT JOIN url_checks
-                    ON urls.id = url_checks.url_id
-                    GROUP BY urls.id
-        ) AS nested
-        LEFT JOIN url_checks
-        ON nested.id  = url_checks.url_id and nested.last_check = url_checks.created_at
-        ORDER BY nested.created_at DESC";
-    $rows = $pdo->query($query)->fetchAll(PDO::FETCH_ASSOC);
-    return $this->get('view')->render($response, 'urls.html', compact('rows'));
+
+    $urls = $pdo->query('SELECT * FROM urls')->fetchAll();
+    $checks = $pdo->query('SELECT * FROM url_checks')->fetchAll();
+
+    $joined = Arr::map($urls, function ($url) use ($checks) {
+
+        $chunk = Arr::where($checks, function ($check) use ($url) {
+            return $check['url_id'] === $url['id'];
+        });
+
+        $sortedByDate = Arr::sort($chunk, function ($check) {
+            return $check['created_at'];
+        });
+
+        $reversed = array_reverse($sortedByDate);
+
+        $checkWithMaxDate = $reversed[0];
+
+        $forJoin = [
+            'last_check' => $checkWithMaxDate['created_at'],
+            'status_code' => $checkWithMaxDate['status_code'],
+        ];
+
+        return array_merge($url, $forJoin);
+    });
+
+    return $this->get('view')->render($response, 'urls.html', ['rows' => array_reverse($joined)]);
 })->setName('urls');
 
 $app->get('/urls/{id}', function (Request $request, Response $response, array $args) {
