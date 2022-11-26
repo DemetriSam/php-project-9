@@ -33,7 +33,7 @@ $container->set('flash', function () {
 });
 
 $container->set('db', function () {
-    $databaseUrl = parse_url(getenv('DATABASE_URL') ?? '');
+    $databaseUrl = parse_url(Arr::get($_ENV, 'DATABASE_URL', ''));
 
     $username = Arr::get($databaseUrl, 'user', 'postgres');
     $password = Arr::get($databaseUrl, 'pass', 'postgres');
@@ -175,7 +175,7 @@ $app->post('/urls/{url_id}/checks', function (Request $request, Response $respon
     $document = new \DiDom\Document($url, true);
     $h1Tag = $document->first('h1');
     $titleTag = $document->first('title');
-    $metaDescription = $document->first('meta[name=description]');
+    $metaDescription = (string) $document->first('meta[name=description]');
 
     $description = Str::between($metaDescription, 'content="', '"');
     $h1 = optional($h1Tag)->text();
