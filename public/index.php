@@ -64,7 +64,7 @@ $app->get('/', function (Request $request, Response $response, array $args) {
 $app->get('/urls', function (Request $request, Response $response, array $args) {
     $pdo = $this->get('db');
 
-    $urls = $pdo->query('SELECT * FROM urls')->fetchAll();
+    $urls = $pdo->query('SELECT * FROM urls ORDER BY created_at DESC')->fetchAll();
     $checks = $pdo->query('SELECT * FROM url_checks')->fetchAll();
 
     $joined = Arr::map($urls, function ($url) use ($checks) {
@@ -89,7 +89,7 @@ $app->get('/urls', function (Request $request, Response $response, array $args) 
         return array_merge($url, $forJoin);
     });
 
-    return $this->get('view')->render($response, 'urls.html', ['rows' => array_reverse($joined)]);
+    return $this->get('view')->render($response, 'urls.html', ['rows' => $joined]);
 })->setName('urls');
 
 $app->get('/urls/{id}', function (Request $request, Response $response, array $args) {
