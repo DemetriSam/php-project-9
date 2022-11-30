@@ -119,7 +119,7 @@ $app->get('/urls/{id}', function (Request $request, Response $response, array $a
 $app->post('/urls', function (Request $request, Response $response, array $args) use ($app) {
     $name = Arr::get($request->getParsedBody(), 'url.name', '');
     $now = Carbon::now()->toDateTimeString();
-    
+
     $validator = new Validator($_POST);
     $validator->rule('required', 'url.name');
     $validator->rule('url', 'url.name');
