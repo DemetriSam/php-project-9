@@ -187,7 +187,7 @@ $app->post('/urls/{url_id}/checks', function (Request $request, Response $respon
     $titleTag = $document->first('title');
     $metaDescription = $document->first('meta[name=description]');
     /** @phpstan-ignore-next-line */
-    $description = Str::between($metaDescription, 'content="', '"');
+    $description = $metaDescription ? Str::between($metaDescription, 'content="', '"') : '';
     $h1 = optional($h1Tag)->text();
     $title = optional($titleTag)->text();
 
