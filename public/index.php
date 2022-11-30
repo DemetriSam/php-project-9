@@ -11,17 +11,20 @@ use Valitron\Validator;
 use Slim\Routing\RouteParser;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-use Hexlet\Code\MyCustomErrorRenderer;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Exception\ConnectException;
 
 require __DIR__ . '/../vendor/autoload.php';
 
-session_start();
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
 
 $container = new Container();
 AppFactory::setContainer($container);
 
 $container->set('view', function () {
-    return Twig::create('../views');
+    return $twig = Twig::create(dirname(__DIR__) . '/views', ['cache' => false]);
 });
 
 $container->set('flash', function () {
@@ -39,22 +42,42 @@ $container->set('db', function () {
     $path = Str::of(Arr::get($databaseUrl, 'path'))->ltrim('/');
     $dbname = $path->isEmpty() ? 'php-project-9' : $path;
 
-    return connect($host, $port, $dbname, $username, $password);
+    return new \PDO("pgsql:host={$host};port={$port};dbname={$dbname};", $username, $password, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    ]);
 });
 
 
 $app = AppFactory::create();
 
 $app->addRoutingMiddleware();
-$errorMiddleware = $app->addErrorMiddleware(true, true, true);
-$errorHandler = $errorMiddleware->getDefaultErrorHandler();
-/** @phpstan-ignore-next-line */
-$errorHandler->registerErrorRenderer('text/html', MyCustomErrorRenderer::class);
+
+$isDebug = Arr::get($_ENV, 'APP_DEBUG', false);
+$errorMiddleware = $app->addErrorMiddleware($isDebug, true, true);
+
+$customErrorHandler = function (
+    Request $request,
+    Throwable $exception,
+    bool $displayErrorDetails,
+    bool $logErrors,
+    bool $logErrorDetails,
+) use ($app) {
+    $actualCode = $exception->getCode();
+    $error = $exception->getMessage();
+    $response = $app->getResponseFactory()->createResponse();
+    $result = $actualCode === 404 ?
+        $this->get('view')->render($response, "{$actualCode}.twig", compact('error'))->withStatus($actualCode) :
+        $this->get('view')->render($response, "500.twig", compact('error', 'actualCode'))->withStatus(500);
+    return $result;
+};
+
+$errorHandler = $errorMiddleware->setDefaultErrorHandler($customErrorHandler);
 
 $app->add(TwigMiddleware::createFromContainer($app));
 
 $app->get('/', function (Request $request, Response $response, array $args) {
-    return $this->get('view')->render($response, 'index.html');
+    return $this->get('view')->render($response, 'index.twig');
 })->setName('index');
 
 $app->get('/urls', function (Request $request, Response $response, array $args) {
@@ -70,8 +93,8 @@ $app->get('/urls', function (Request $request, Response $response, array $args) 
         'checks' => Arr::keyBy($checks, 'url_id'),
     ];
 
-    return $this->get('view')->render($response, 'urls.html', $params);
-})->setName('urls');
+    return $this->get('view')->render($response, 'urls.twig', $params);
+})->setName('urls.index');
 
 $app->get('/urls/{id}', function (Request $request, Response $response, array $args) {
     $id = $args['id'];
@@ -82,16 +105,18 @@ $app->get('/urls/{id}', function (Request $request, Response $response, array $a
     $getUrlInfo = "SELECT * FROM urls WHERE id=$id";
     $urlInfo = optional($pdo->query($getUrlInfo))->fetch(PDO::FETCH_ASSOC);
 
+    if (!$urlInfo) {
+        throw new \Exception("Page not found", 404);
+    }
+
     $getChecks = "SELECT * FROM url_checks WHERE url_id=$id ORDER BY created_at DESC";
     $checks = $pdo->query($getChecks)->fetchAll(PDO::FETCH_ASSOC);
 
-    return $this->get('view')->render($response, 'show.url.html', compact('urlInfo', 'checks', 'messages'));
+    return $this->get('view')->render($response, 'show.url.twig', compact('urlInfo', 'checks', 'messages'));
 })->setName('urls.show');
 ;
 
 $app->post('/urls', function (Request $request, Response $response, array $args) use ($app) {
-    $name = $_POST['url']['name'];
-    $now = Carbon::now()->toDateTimeString();
     $validator = new Validator($_POST);
     $validator->rule('required', 'url.name');
     $validator->rule('url', 'url.name');
@@ -106,12 +131,15 @@ $app->post('/urls', function (Request $request, Response $response, array $args)
         $messages = $errors ? $errors['url.name'] : [];
 
         $params = [
-            'error' => $customMessages[$messages[0]],
+            'errors' => Arr::map($messages, fn($message) => $customMessages[$message]),
             'oldValue' => $name,
         ];
 
-        return $this->get('view')->render($response, 'index.html', $params)->withStatus(422);
+        return $this->get('view')->render($response, 'index.twig', $params)->withStatus(422);
     }
+
+    $name = Arr::get($request->getParsedBody(), 'url.name', '');
+    $now = Carbon::now()->toDateTimeString();
 
     $pdo = $this->get('db');
 
