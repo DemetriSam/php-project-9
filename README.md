@@ -19,5 +19,5 @@ https://php-project-9-production-b400.up.railway.app/
 ## Установка
 - make install
 
-## Запуск приложения на localhos:8000
+## Запуск приложения на localhost:8000
 - make start
