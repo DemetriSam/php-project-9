@@ -7,7 +7,6 @@ install:
 validate:
 	composer validate
 lint:
-	composer exec --verbose phpcs -- --standard=PSR12 public src
+	composer exec --verbose phpcs -- --standard=PSR12 public
 lint-fix:
-	composer exec --verbose phpcbf -- --standard=PSR12 public src
-	
+	composer exec --verbose phpcbf -- --standard=PSR12 public
