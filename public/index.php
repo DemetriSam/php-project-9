@@ -16,6 +16,8 @@ use GuzzleHttp\Exception\ConnectException;
 
 require __DIR__ . '/../vendor/autoload.php';
 
+
+
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
@@ -24,7 +26,10 @@ $container = new Container();
 AppFactory::setContainer($container);
 
 $container->set('view', function () {
-    return $twig = Twig::create(dirname(__DIR__) . '/views', ['cache' => false]);
+    $twig = Twig::create(dirname(__DIR__) . '/views', ['cache' => false]);
+    $componentsRegistry = new \RedAnt\TwigComponents\Registry($twig->getEnvironment());
+    $componentsRegistry->addComponent('nav_link', '@components/nav_link.twig');
+    return $twig;
 });
 
 $container->set('flash', function () {
@@ -45,7 +50,7 @@ $container->set('db', function () {
     return new \PDO("pgsql:host={$host};port={$port};dbname={$dbname};", $username, $password, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    ]);
+]);
 });
 
 
@@ -66,10 +71,19 @@ $customErrorHandler = function (
     $actualCode = $exception->getCode();
     $error = $exception->getMessage();
     $response = $app->getResponseFactory()->createResponse();
-    $result = $actualCode === 404 ?
-        $this->get('view')->render($response, "{$actualCode}.twig", compact('error'))->withStatus($actualCode) :
-        $this->get('view')->render($response, "500.twig", compact('error', 'actualCode'))->withStatus(500);
-    return $result;
+
+    switch ($actualCode) {
+        case '404':
+            return $this
+                    ->get('view')
+                    ->render($response, "{$actualCode}.twig", compact('error'))
+                    ->withStatus($actualCode);
+        default:
+            return $this
+                    ->get('view')
+                    ->render($response, "500.twig", compact('error', 'actualCode'))
+                    ->withStatus(500);
+    }
 };
 
 $errorHandler = $errorMiddleware->setDefaultErrorHandler($customErrorHandler);
@@ -103,14 +117,14 @@ $app->get('/urls/{id}', function (Request $request, Response $response, array $a
     $pdo = $this->get('db');
 
     $getUrlInfo = "SELECT * FROM urls WHERE id=$id";
-    $urlInfo = optional($pdo->query($getUrlInfo))->fetch(PDO::FETCH_ASSOC);
+    $urlInfo = optional($pdo->query($getUrlInfo))->fetch();
 
     if (!$urlInfo) {
         throw new \Exception("Page not found", 404);
     }
 
     $getChecks = "SELECT * FROM url_checks WHERE url_id=$id ORDER BY created_at DESC";
-    $checks = $pdo->query($getChecks)->fetchAll(PDO::FETCH_ASSOC);
+    $checks = $pdo->query($getChecks)->fetchAll();
 
     return $this->get('view')->render($response, 'show.url.twig', compact('urlInfo', 'checks', 'messages'));
 })->setName('urls.show');
@@ -164,19 +178,25 @@ $app->post('/urls/{url_id}/checks', function (Request $request, Response $respon
     $urlId = $args['url_id'];
     $now = Carbon::now()->toDateTimeString();
     $pdo = $this->get('db');
-    ;
+
     $routeParser = $app->getRouteCollector()->getRouteParser();
 
     $query = "SELECT name FROM urls WHERE id=$urlId";
     $result = optional($pdo->query($query))->fetch();
     $url = $result ? $result['name'] : null;
 
-    $client = new GuzzleHttp\Client();
+    $client = new GuzzleHttp\Client(); //передать в конструктор таймаут
 
     try {
         $res = $client->request('GET', $url);
-    } catch (\Throwable $e) {
+    } catch (RequestException $e) {
+        $this->get('flash')->addMessage('warning', 'Проверка была выполнена успешно, но сервер ответил с ошибкой');
+        return $response->withHeader('Location', $routeParser->urlFor('urls.show', ['id' => $urlId]))->withStatus(302);
+    } catch (ConnectException $e) {
         $this->get('flash')->addMessage('error', 'Произошла ошибка при проверке, не удалось подключиться');
+        return $response->withHeader('Location', $routeParser->urlFor('urls.show', ['id' => $urlId]))->withStatus(302);
+    } catch (\Throwable $e) {
+        $this->get('flash')->addMessage('error', 'Произошла неизвестная ошибка при попытке проверить сайт');
         return $response->withHeader('Location', $routeParser->urlFor('urls.show', ['id' => $urlId]))->withStatus(302);
     }
 
@@ -185,9 +205,8 @@ $app->post('/urls/{url_id}/checks', function (Request $request, Response $respon
     $document = new \DiDom\Document($url, true);
     $h1Tag = $document->first('h1');
     $titleTag = $document->first('title');
-    $metaDescription = $document->first('meta[name=description]');
-    /** @phpstan-ignore-next-line */
-    $description = $metaDescription ? Str::between($metaDescription, 'content="', '"') : '';
+
+    $description = (string) optional($document->first('meta[name=description]'))->getAttribute('content');
     $h1 = optional($h1Tag)->text();
     $title = optional($titleTag)->text();
 
