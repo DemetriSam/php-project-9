@@ -29,7 +29,7 @@ AppFactory::setContainer($container);
 
 $container->set('view', function () {
     $twig = Twig::create(dirname(__DIR__) . '/views', ['cache' => false]);
-    
+
     $componentsRegistry = new \RedAnt\TwigComponents\Registry($twig->getEnvironment());
     //$componentsRegistry->addComponent('nav_link', 'components/nav_link.twig');
     $componentsRegistry->addComponent('navbar', 'components/navbar.twig');
@@ -37,7 +37,7 @@ $container->set('view', function () {
     $componentsRegistry->addComponent('flash', 'components/flash.twig');
     $componentsExtension = new ComponentsExtension($componentsRegistry);
     $twig->addExtension($componentsExtension);
-    
+
     return $twig;
 });
 
