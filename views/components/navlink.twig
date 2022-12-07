@@ -1,0 +1,16 @@
+{% component navlink {
+    route: {
+        type: 'string',
+        required: true
+    },
+    title: {
+        type: 'string',
+        required: true
+    }
+} with options %}
+
+<li class="nav-item">
+	<a class="nav-link {% if is_current_url(navlink.route) %} active {% endif %}" href="{{ url_for(navlink.route) }}">
+		{{ navlink.title }}
+	</a>
+</li>

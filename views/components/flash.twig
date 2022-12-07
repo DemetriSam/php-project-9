@@ -1,0 +1,14 @@
+{% component flash {
+    type: {
+        type: 'string',
+        required: true
+    },
+    message: {
+        type: 'string',
+        required: true
+    }
+} with options %}
+
+<div class="alert alert-{{ flash.type }}" role="alert">
+	{{ flash.message }}
+</div>

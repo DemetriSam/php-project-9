@@ -10,58 +10,28 @@
 	</head>
 
 	<body class="min-vh-100 d-flex flex-column">
-		{{ components.nav_link({}) }}
-		{{ component.button({
-				container: 'a',
-				label: 'Click me',
-				classes: [ 'large' ]}) 
-			}}
 
-		<header class="flex-shrink-0">
-			<nav class="navbar navbar-expand-md navbar-dark bg-dark px-3">
-				<a class="navbar-brand" href="{{ url_for('index') }}">Анализатор страниц</a>
-				<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-					<span class="navbar-toggler-icon"></span>
-				</button>
-				<div class="collapse navbar-collapse" id="navbarNav">
-					<ul class="navbar-nav">
-						{% set pages = [
-                    {
-                    'name': 'index',
-                    'title': 'Главная'
-                    },
-                    {
-                    'name': 'urls.index',
-                    'title': 'Сайты'
-                    },
-                    ] %}
-						{% for page in pages %}
-							<li class="nav-item">
-								<a class="nav-link {% if is_current_url(page.name) %} active {% endif %}" href="{{ url_for(page.name) }}">{{ page.title }}</a>
-							</li>
-						{% endfor %}
-
-					</ul>
-				</div>
-			</nav>
-		</header>
+		<header class="flex-shrink-0">{{ component.navbar({}) }}</header>
 
 		{% for message in messages.success %}
-			<div class="alert alert-success" role="alert">
-				{{ message }}
-			</div>
+			{{ component.flash({
+				type: 'success',
+				message: message
+			}) }}
 		{% endfor %}
 
 		{% for message in messages.error %}
-			<div class="alert alert-danger" role="alert">
-				{{ message }}
-			</div>
+			{{ component.flash({
+				type: 'danger',
+				message: message
+			}) }}
 		{% endfor %}
 
 		{% for message in messages.warning %}
-			<div class="alert alert-warning" role="alert">
-				{{ message }}
-			</div>
+			{{ component.flash({
+				type: 'warning',
+				message: message
+			}) }}
 		{% endfor %}
 
 		<main class="flex-grow-1">

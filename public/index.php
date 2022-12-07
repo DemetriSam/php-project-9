@@ -13,6 +13,8 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Exception\ConnectException;
+use RedAnt\TwigComponents\Registry as ComponentsRegistry;
+use RedAnt\TwigComponents\Extension as ComponentsExtension;
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -27,8 +29,15 @@ AppFactory::setContainer($container);
 
 $container->set('view', function () {
     $twig = Twig::create(dirname(__DIR__) . '/views', ['cache' => false]);
+    
     $componentsRegistry = new \RedAnt\TwigComponents\Registry($twig->getEnvironment());
-    $componentsRegistry->addComponent('nav_link', '@components/nav_link.twig');
+    //$componentsRegistry->addComponent('nav_link', 'components/nav_link.twig');
+    $componentsRegistry->addComponent('navbar', 'components/navbar.twig');
+    $componentsRegistry->addComponent('navlink', 'components/navlink.twig');
+    $componentsRegistry->addComponent('flash', 'components/flash.twig');
+    $componentsExtension = new ComponentsExtension($componentsRegistry);
+    $twig->addExtension($componentsExtension);
+    
     return $twig;
 });
 
@@ -50,7 +59,7 @@ $container->set('db', function () {
     return new \PDO("pgsql:host={$host};port={$port};dbname={$dbname};", $username, $password, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-]);
+    ]);
 });
 
 
