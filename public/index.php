@@ -18,8 +18,6 @@ use RedAnt\TwigComponents\Extension as ComponentsExtension;
 
 require __DIR__ . '/../vendor/autoload.php';
 
-
-
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
@@ -51,7 +49,7 @@ $container->set('db', function () {
     $username = Arr::get($databaseUrl, 'user', 'postgres');
     $password = Arr::get($databaseUrl, 'pass', 'postgres');
     $host = Arr::get($databaseUrl, 'host', 'localhost');
-    $port = Arr::get($databaseUrl, 'port', '5433');
+    $port = Arr::get($databaseUrl, 'port', '5432');
 
     $path = Str::of(Arr::get($databaseUrl, 'path'))->ltrim('/');
     $dbname = $path->isEmpty() ? 'php-project-9' : $path;
@@ -119,21 +117,25 @@ $app->get('/urls', function (Request $request, Response $response, array $args) 
     return $this->get('view')->render($response, 'urls.twig', $params);
 })->setName('urls.index');
 
-$app->get('/urls/{id}', function (Request $request, Response $response, array $args) {
+$app->get('/urls/{id:[0-9]+}', function (Request $request, Response $response, array $args) {
     $id = $args['id'];
     $messages = $this->get('flash')->getMessages();
 
     $pdo = $this->get('db');
 
-    $getUrlInfo = "SELECT * FROM urls WHERE id=$id";
-    $urlInfo = optional($pdo->query($getUrlInfo))->fetch();
+    $getUrlInfo = $pdo->prepare("SELECT * FROM urls WHERE id=:id");
+    $getUrlInfo->bindParam('id', $id, PDO::PARAM_INT);
+    $getUrlInfo->execute();
+    $urlInfo = optional($getUrlInfo)->fetch();
 
     if (!$urlInfo) {
         throw new \Exception("Page not found", 404);
     }
 
-    $getChecks = "SELECT * FROM url_checks WHERE url_id=$id ORDER BY created_at DESC";
-    $checks = $pdo->query($getChecks)->fetchAll();
+    $getChecks = $pdo->prepare("SELECT * FROM url_checks WHERE url_id=:id ORDER BY created_at DESC");
+    $getChecks->bindParam('id', $id, PDO::PARAM_INT);
+    $getChecks->execute();
+    $checks = optional($getChecks)->fetchAll();
 
     return $this->get('view')->render($response, 'show.url.twig', compact('urlInfo', 'checks', 'messages'));
 })->setName('urls.show');
@@ -166,12 +168,17 @@ $app->post('/urls', function (Request $request, Response $response, array $args)
 
     $pdo = $this->get('db');
 
-    $checkExistence = "SELECT * FROM urls WHERE name='$name'";
-    $row = optional($pdo->query($checkExistence))->fetch();
+    $checkExistence = $pdo->prepare("SELECT * FROM urls WHERE name=:name");
+    $checkExistence->bindParam('name', $name, PDO::PARAM_INT);
+    $checkExistence->execute();
+    $row = optional($checkExistence)->fetch();
 
     if (!$row) {
-        $query = "INSERT INTO urls (name, created_at) VALUES ('$name', '$now')";
-        $pdo->query($query);
+        $query = "INSERT INTO urls (name, created_at) VALUES (:name, :now)";
+        $statement = $pdo->prepare($query);
+        $statement->bindParam('name', $name);
+        $statement->bindParam('now', $now);
+        $statement->execute();
         $id = $pdo->lastInsertId();
         $message = 'Страница успешно добавлена';
     } else {
@@ -183,18 +190,21 @@ $app->post('/urls', function (Request $request, Response $response, array $args)
     return $response->withHeader('Location', $routeParser->urlFor('urls.show', ['id' => $id]))->withStatus(302);
 })->setName('urls.store');
 
-$app->post('/urls/{url_id}/checks', function (Request $request, Response $response, array $args) use ($app) {
+$app->post('/urls/{url_id:[0-9]+}/checks', function (Request $request, Response $response, array $args) use ($app) {
     $urlId = $args['url_id'];
     $now = Carbon::now()->toDateTimeString();
     $pdo = $this->get('db');
 
     $routeParser = $app->getRouteCollector()->getRouteParser();
 
-    $query = "SELECT name FROM urls WHERE id=$urlId";
-    $result = optional($pdo->query($query))->fetch();
+    $query = "SELECT name FROM urls WHERE id=:urlId";
+    $statement = $pdo->prepare($query);
+    $statement->bindParam('urlId', $urlId);
+    $statement->execute();
+    $result = optional($statement)->fetch();
     $url = $result ? $result['name'] : null;
 
-    $client = new GuzzleHttp\Client(); //передать в конструктор таймаут
+    $client = new GuzzleHttp\Client(['timeout' => 2 ]); //передать в конструктор таймаут
 
     try {
         $res = $client->request('GET', $url);
@@ -220,8 +230,15 @@ $app->post('/urls/{url_id}/checks', function (Request $request, Response $respon
     $title = optional($titleTag)->text();
 
     $query1 = "INSERT INTO url_checks (url_id, created_at, status_code, h1, title, description) ";
-    $query2 = "VALUES ('$urlId', '$now', $statusCode, '$h1', '$title', '$description')";
-    $pdo->query($query1 . $query2);
+    $query2 = "VALUES (:urlId, :now, :statusCode, :h1, :title, :description)";
+    $statement = $pdo->prepare($query1 . $query2);
+    $statement->bindParam('urlId', $urlId, PDO::PARAM_INT);
+    $statement->bindParam('now', $now);
+    $statement->bindParam('statusCode', $statusCode);
+    $statement->bindParam('h1', $h1);
+    $statement->bindParam('title', $title);
+    $statement->bindParam('description', $description);
+    $statement->execute();
 
     $this->get('flash')->addMessage('success', 'Страница успешно проверена');
     return $response->withHeader('Location', $routeParser->urlFor('urls.show', ['id' => $urlId]))->withStatus(302);

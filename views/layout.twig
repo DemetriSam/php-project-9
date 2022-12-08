@@ -1,50 +1,57 @@
 <!DOCTYPE html>
 <html lang="ru">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Анализатор страниц</title>
+        <link 
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+            integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi"
+            crossorigin="anonymous" 
+        />
+    </head>
 
-	<head>
-		<meta charset="UTF-8">
-		<meta http-equiv="X-UA-Compatible" content="IE=edge">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>Анализатор страниц</title>
-		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
-	</head>
+    <body class="min-vh-100 d-flex flex-column">
+        <header class="flex-shrink-0">{{ component.navbar({}) }}</header>
 
-	<body class="min-vh-100 d-flex flex-column">
+        {% for message in messages.success %}
+            {{ component.flash({
+                type: 'success',
+                message: message
+            }) }}
+        {% endfor %}
 
-		<header class="flex-shrink-0">{{ component.navbar({}) }}</header>
+        {% for message in messages.error %}
+            {{ component.flash({
+                type: 'danger',
+                message: message
+            }) }}
+        {% endfor %}
 
-		{% for message in messages.success %}
-			{{ component.flash({
-				type: 'success',
-				message: message
-			}) }}
-		{% endfor %}
+        {% for message in messages.warning %}
+            {{ component.flash({
+                type: 'warning',
+                message: message
+            }) }}
+        {% endfor %}
 
-		{% for message in messages.error %}
-			{{ component.flash({
-				type: 'danger',
-				message: message
-			}) }}
-		{% endfor %}
-
-		{% for message in messages.warning %}
-			{{ component.flash({
-				type: 'warning',
-				message: message
-			}) }}
-		{% endfor %}
-
-		<main class="flex-grow-1">
-			<div class="container-lg mt-3"> {% block main %}{% endblock main %}
-				</div>
-			</main>
-			<footer class="border-top py-3 mt-5 flex-shrink-0">
-				<div class="container-lg">
-					<div class="text-center">
-						<a href="https://hexlet.io/pages/about" target="_blank">Hexlet</a>
-					</div>
-				</div>
-			</footer>
-			<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-OERcA2EqjJCMA+/3y+gxIOqMEjwtxJY7qPCqsdltbNJuaOe923+mo//f6V8Qbsw3" crossorigin="anonymous"></script>
-		</body>
-	</html>
+        <main class="flex-grow-1">
+            <div class="container-lg mt-3">
+                {% block main %}{% endblock %}
+            </div>
+        </main>
+        <footer class="border-top py-3 mt-5 flex-shrink-0">
+            <div class="container-lg">
+                <div class="text-center">
+                    <a href="https://hexlet.io/pages/about" target="_blank">Hexlet</a>
+                </div>
+            </div>
+        </footer>
+        <script 
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-OERcA2EqjJCMA+/3y+gxIOqMEjwtxJY7qPCqsdltbNJuaOe923+mo//f6V8Qbsw3"
+            crossorigin="anonymous"></script>
+    </body>
+</html>
