@@ -6,10 +6,13 @@ CREATE TABLE urls (
 
 CREATE TABLE url_checks (
     id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY, 
-    url_id bigint REFERENCES urls (id), 
+    url_id bigint, 
     status_code int, 
     h1 varchar(255), 
     title varchar(255), 
     description text, 
-    created_at varchar(255)
+    created_at varchar(255),
+    CONSTRAINT urls
+      FOREIGN KEY(url_id) 
+	    REFERENCES urls(url_id)
 );
