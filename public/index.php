@@ -226,7 +226,7 @@ $app->post('/urls/{url_id:[0-9]+}/checks', function (Request $request, Response 
 
     $metaDescription = $document->first('meta[name=description]');
     /** @phpstan-ignore-next-line */
-    $description = (string) $metaDescription ? Str::between($metaDescription, 'content="', '"') : '';
+    $description = $metaDescription ? Str::between($metaDescription, 'content="', '"') : '';
 
     $h1 = optional($h1Tag)->text();
     $title = optional($titleTag)->text();
