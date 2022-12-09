@@ -14,28 +14,12 @@
     </head>
 
     <body class="min-vh-100 d-flex flex-column">
-        <header class="flex-shrink-0">{{ component.navbar({}) }}</header>
-
-        {% for message in messages.success %}
-            {{ component.flash({
-                type: 'success',
-                message: message
-            }) }}
-        {% endfor %}
-
-        {% for message in messages.error %}
-            {{ component.flash({
-                type: 'danger',
-                message: message
-            }) }}
-        {% endfor %}
-
-        {% for message in messages.warning %}
-            {{ component.flash({
-                type: 'warning',
-                message: message
-            }) }}
-        {% endfor %}
+        
+        <header class="flex-shrink-0">
+            {% include 'navbar.twig' %}
+        </header>
+        
+        {% include 'flash.twig' %}
 
         <main class="flex-grow-1">
             <div class="container-lg mt-3">

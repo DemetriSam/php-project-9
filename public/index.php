@@ -29,10 +29,9 @@ $container->set('view', function () {
     $twig = Twig::create(dirname(__DIR__) . '/views', ['cache' => false]);
 
     $componentsRegistry = new \RedAnt\TwigComponents\Registry($twig->getEnvironment());
-    //$componentsRegistry->addComponent('nav_link', 'components/nav_link.twig');
     $componentsRegistry->addComponent('navbar', 'components/navbar.twig');
     $componentsRegistry->addComponent('navlink', 'components/navlink.twig');
-    $componentsRegistry->addComponent('flash', 'components/flash.twig');
+    $componentsRegistry->addComponent('flashmsg', 'components/flashmsg.twig');
     $componentsExtension = new ComponentsExtension($componentsRegistry);
     $twig->addExtension($componentsExtension);
 
@@ -204,7 +203,7 @@ $app->post('/urls/{url_id:[0-9]+}/checks', function (Request $request, Response 
     $result = optional($statement)->fetch();
     $url = $result ? $result['name'] : null;
 
-    $client = new GuzzleHttp\Client(['timeout' => 2 ]); //передать в конструктор таймаут
+    $client = new GuzzleHttp\Client(['timeout' => 2 ]);
 
     try {
         $res = $client->request('GET', $url);

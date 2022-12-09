@@ -1,0 +1,13 @@
+{% for message in messages.success %}
+    {{ component.flashmsg({ type: 'success', message: message }) }}
+{% endfor %}
+
+{% for message in messages.error %}
+    {{ component.flashmsg({ type: 'danger', message: message }) }}
+{% endfor %}
+
+{% for message in messages.warning %}
+    {{ component.flashmsg({ type: 'warning', message: message }) }}
+{% endfor %}
+
+
