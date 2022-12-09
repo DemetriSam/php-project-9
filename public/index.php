@@ -203,7 +203,7 @@ $app->post('/urls/{url_id:[0-9]+}/checks', function (Request $request, Response 
     $result = optional($statement)->fetch();
     $url = $result ? $result['name'] : null;
 
-    $client = new GuzzleHttp\Client(['timeout' => 2 ]);
+    $client = new GuzzleHttp\Client(['timeout' => 6 ]);
 
     try {
         $res = $client->request('GET', $url);
