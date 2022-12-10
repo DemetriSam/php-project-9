@@ -32,7 +32,7 @@ $container->set('view', function () {
     //$componentsRegistry->addComponent('nav_link', 'components/nav_link.twig');
     $componentsRegistry->addComponent('navbar', 'components/navbar.twig');
     $componentsRegistry->addComponent('navlink', 'components/navlink.twig');
-    $componentsRegistry->addComponent('flash', 'components/flash.twig');
+    $componentsRegistry->addComponent('flashmsg', 'components/flashmsg.twig');
     $componentsExtension = new ComponentsExtension($componentsRegistry);
     $twig->addExtension($componentsExtension);
 
