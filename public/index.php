@@ -222,7 +222,7 @@ $app->post('/urls/{url_id:[0-9]+}/checks', function (Request $request, Response 
     }
 
     $statusCode = $res->getStatusCode();
-    $html = file_get_contents($url);
+    $html = file_get_contents($url) ?? '';
 
     $crawler = new Crawler($html);
     $title = $crawler->filter('title')->text();
