@@ -12,7 +12,7 @@ CREATE TABLE url_checks (
     title varchar(255), 
     description text, 
     created_at varchar(255),
-    CONSTRAINT urls
-      FOREIGN KEY(url_id) 
-	    REFERENCES urls(url_id)
 );
+
+ALTER TABLE public.url_checks
+    ADD CONSTRAINT url_checks_url_id_foreign FOREIGN KEY (url_id) REFERENCES public.urls(id);

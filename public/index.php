@@ -29,9 +29,10 @@ $container->set('view', function () {
     $twig = Twig::create(dirname(__DIR__) . '/views', ['cache' => false]);
 
     $componentsRegistry = new \RedAnt\TwigComponents\Registry($twig->getEnvironment());
+    //$componentsRegistry->addComponent('nav_link', 'components/nav_link.twig');
     $componentsRegistry->addComponent('navbar', 'components/navbar.twig');
     $componentsRegistry->addComponent('navlink', 'components/navlink.twig');
-    $componentsRegistry->addComponent('flashmsg', 'components/flashmsg.twig');
+    $componentsRegistry->addComponent('flash', 'components/flash.twig');
     $componentsExtension = new ComponentsExtension($componentsRegistry);
     $twig->addExtension($componentsExtension);
 
@@ -203,7 +204,7 @@ $app->post('/urls/{url_id:[0-9]+}/checks', function (Request $request, Response 
     $result = optional($statement)->fetch();
     $url = $result ? $result['name'] : null;
 
-    $client = new GuzzleHttp\Client(['timeout' => 6 ]);
+    $client = new GuzzleHttp\Client(['timeout' => 2 ]); //передать в конструктор таймаут
 
     try {
         $res = $client->request('GET', $url);
@@ -224,10 +225,7 @@ $app->post('/urls/{url_id:[0-9]+}/checks', function (Request $request, Response 
     $h1Tag = $document->first('h1');
     $titleTag = $document->first('title');
 
-    $metaDescription = $document->first('meta[name=description]');
-    /** @phpstan-ignore-next-line */
-    $description = $metaDescription ? Str::between($metaDescription, 'content="', '"') : '';
-
+    $description = (string) optional($document->first('meta[name=description]'))->getAttribute('content');
     $h1 = optional($h1Tag)->text();
     $title = optional($titleTag)->text();
 
