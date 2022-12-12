@@ -142,24 +142,18 @@ $app->get('/urls/{id:[0-9]+}', function (Request $request, Response $response, a
 ;
 
 $app->post('/urls', function (Request $request, Response $response, array $args) use ($app) {
-    $name = Arr::get($request->getParsedBody(), 'url.name', '');
+    $formData = $request->getParsedBody();
     $now = Carbon::now()->toDateTimeString();
 
     $validator = new Validator($_POST);
     $validator->rule('required', 'url.name');
     $validator->rule('url', 'url.name');
+
     if (!$validator->validate()) {
-        $customMessages = [
-            'Url.name is required' => 'URL не должен быть пустым',
-            'Url.name is not a valid URL' => 'Некорректный URL',
-        ];
-
-        $params = [
+        return $this->get('view')->render($response, 'index.twig', [
             'errors' => $validator->errors(),
-            'oldValue' => $name,
-        ];
-
-        return $this->get('view')->render($response, 'index.twig', $params)->withStatus(422);
+            'formData' => $formData,
+        ])->withStatus(422);
     }
 
     $pdo = $this->get('db');
