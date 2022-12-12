@@ -29,7 +29,6 @@ $container->set('view', function () {
     $twig = Twig::create(dirname(__DIR__) . '/views', ['cache' => false]);
 
     $componentsRegistry = new \RedAnt\TwigComponents\Registry($twig->getEnvironment());
-    //$componentsRegistry->addComponent('nav_link', 'components/nav_link.twig');
     $componentsRegistry->addComponent('navbar', 'components/navbar.twig');
     $componentsRegistry->addComponent('navlink', 'components/navlink.twig');
     $componentsRegistry->addComponent('flashmsg', 'components/flashmsg.twig');
@@ -155,12 +154,8 @@ $app->post('/urls', function (Request $request, Response $response, array $args)
             'Url.name is not a valid URL' => 'Некорректный URL',
         ];
 
-        $errors = $validator->errors();
-        /** @phpstan-ignore-next-line */
-        $messages = $errors ? $errors['url.name'] : [];
-
         $params = [
-            'errors' => Arr::map($messages, fn($message) => $customMessages[$message]),
+            'errors' => $validator->errors(),
             'oldValue' => $name,
         ];
 
@@ -205,7 +200,7 @@ $app->post('/urls/{url_id:[0-9]+}/checks', function (Request $request, Response 
     $result = optional($statement)->fetch();
     $url = $result ? $result['name'] : null;
 
-    $client = new GuzzleHttp\Client(['timeout' => 2 ]); //передать в конструктор таймаут
+    $client = new GuzzleHttp\Client(['timeout' => 2 ]);
 
     try {
         $res = $client->request('GET', $url);

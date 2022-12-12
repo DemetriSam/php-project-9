@@ -1,5 +1,8 @@
 {% extends "layout.twig" %}
-
+{% set customErrormessages = {
+	'Url.name is required': 'URL не должен быть пустым',
+	'Url.name is not a valid URL': 'Некорректный URL'
+} %}
 {% block main %}
 	<div class="row">
 		<div class="col-12 col-md-10 col-lg-8 mx-auto border rounded-3 bg-light p-5">
@@ -10,7 +13,7 @@
 					<input type="text" name="url[name]" value="{% if oldValue %} {{ oldValue }}{% endif %}" class="form-control form-control-lg {% if errors %} is-invalid {% endif %}" placeholder="https://www.example.com">
 					{% if errors %}
 						<div class="invalid-feedback">
-							{{ errors|first }}
+							{{ customErrormessages[errors['url.name']|first] }}
 						</div>
 					{% endif %}
 
