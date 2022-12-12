@@ -14,8 +14,7 @@
         "guzzlehttp/guzzle": "^7.0",
         "illuminate/support": "^9.41",
         "redant/twig-components": "^1.0",
-        "symfony/dom-crawler": "^6.2",
-        "symfony/css-selector": "^6.2"
+        "imangazaliev/didom": "^2.0"
     },
     "require-dev": {
         "squizlabs/php_codesniffer": "^3.7",

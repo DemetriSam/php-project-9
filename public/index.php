@@ -15,7 +15,6 @@ use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Exception\ConnectException;
 use RedAnt\TwigComponents\Registry as ComponentsRegistry;
 use RedAnt\TwigComponents\Extension as ComponentsExtension;
-use Symfony\Component\DomCrawler\Crawler;
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -224,10 +223,13 @@ $app->post('/urls/{url_id:[0-9]+}/checks', function (Request $request, Response 
     $statusCode = $res->getStatusCode();
     $html = file_get_contents($url);
 
-    $crawler = is_string($html) ? new Crawler($html) : new Crawler('');
-    $title = $crawler->filter('title')->text();
-    $h1 = $crawler->filter('h1')->text();
-    $description = $crawler->filter('meta[name=description]')->attr('content');
+    $document = new \DiDom\Document($url, true);
+    $h1Tag = $document->first('h1');
+    $titleTag = $document->first('title');
+
+    $description = (string) optional($document->first('meta[name=description]'))->getAttribute('content');
+    $h1 = optional($h1Tag)->text();
+    $title = optional($titleTag)->text();
 
     $query1 = "INSERT INTO url_checks (url_id, created_at, status_code, h1, title, description) ";
     $query2 = "VALUES (:urlId, :now, :statusCode, :h1, :title, :description)";
