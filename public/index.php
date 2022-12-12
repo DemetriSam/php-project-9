@@ -159,14 +159,14 @@ $app->post('/urls', function (Request $request, Response $response, array $args)
     $pdo = $this->get('db');
 
     $checkExistence = $pdo->prepare("SELECT * FROM urls WHERE name=:name");
-    $checkExistence->bindParam('name', $formData['url']['name'], PDO::PARAM_INT);
+    $checkExistence->bindParam('name', Arr::get($formData, 'url.name', ''), PDO::PARAM_INT);
     $checkExistence->execute();
     $row = optional($checkExistence)->fetch();
 
     if (!$row) {
         $query = "INSERT INTO urls (name, created_at) VALUES (:name, :now)";
         $statement = $pdo->prepare($query);
-        $statement->bindParam('name', $formData['url']['name']);
+        $statement->bindParam('name', Arr::get($formData, 'url.name', ''));
         $statement->bindParam('now', $now);
         $statement->execute();
         $id = $pdo->lastInsertId();
